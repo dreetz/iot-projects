@@ -101,7 +101,7 @@ void setup_display() {
 
 void printTextToDisplay(String text) {
   display.clearDisplay();
-  display.setTextSize(3);
+  display.setTextSize(4);
   display.setCursor(0, 0);
   display.println(text);
   display.display();
