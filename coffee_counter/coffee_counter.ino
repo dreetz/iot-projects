@@ -4,12 +4,12 @@
 #include <WiFiMulti.h>
 #include <WiFiSTA.h>
 #include <WiFiScan.h>
-
 #include <PubSubClient.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <ArduinoOTA.h>
 
 # define INPUT_PIN_1 15
 # define INPUT_PIN_2 16
@@ -37,8 +37,9 @@ IPAddress local_IP(123, 456, 789, 111); // TODO
 IPAddress gateway(123, 456, 789, 1); // TODO
 IPAddress subnet(255, 255, 255, 0);
 
-const char person1 = "name";
-const char person2 = "name";
+const char* person1 = "name";
+const char* person2 = "name";
+const char* fw_ver = "0.2";
 
 uint64_t chipid = ESP.getEfuseMac();
 
@@ -50,7 +51,9 @@ char msg[50];
 String displayText = ""; // for storing the last text on display
 
 void setup_wifi() {
-  delay(100);
+  Serial.begin(115200);
+  Serial.println("Booting");
+
 
   // Start to connect to wifi
   Serial.println();
@@ -74,6 +77,8 @@ void setup_wifi() {
   display.println("WLAN connected");
   display.println(WiFi.localIP());
   display.display();
+
+  ArduinoOTA.begin();
 }
 
 void setup_display() {
@@ -231,5 +236,8 @@ void loop() {
   if (now - lastMsg > 10000) {
     lastMsg = now;
     client.publish("iot/coffee/alive", "alive");
+    client.publish("iot/coffee/fw_ver", fw_ver);
   }
+
+  ArduinoOTA.handle();
 }
