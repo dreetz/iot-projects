@@ -37,13 +37,9 @@ IPAddress local_IP(123, 456, 789, 111); // TODO
 IPAddress gateway(123, 456, 789, 1); // TODO
 IPAddress subnet(255, 255, 255, 0);
 
-const char* person1 = "name"; // Name of person 1 for MQTT topic
-const char* person2 = "name"; // Name of person 2 for MQTT topic
-const char* fw_ver = "0.3.1";
-int count_total = 0;
-int count_person1 = 0;
-int count_person2 = 0;
-int count_both = 0;
+const char* person1 = "name";
+const char* person2 = "name";
+const char* fw_ver = "0.2";
 
 uint64_t chipid = ESP.getEfuseMac();
 
@@ -120,20 +116,6 @@ void printFeedbackToDisplay(String name) {
   display.display();
 }
 
-void printStatisticToDisplay(int total, int both, int c_person1, int c_person2) {
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setCursor(0, 0);
-  display.print("total: ");
-  display.println(total);
-  display.setTextSize(1);
-  display.print(person2.toUpperCase() + " today: ");
-  display.println(c_person2);
-  display.print(person1.toUpperCase() + " today: ");
-  display.println(c_person1);
-  display.display();
-}
-
 void callback(char* topic, byte* message, unsigned int length) {
   //Serial.print("Message arrived on topic: ");
   //Serial.print(topic);
@@ -145,49 +127,12 @@ void callback(char* topic, byte* message, unsigned int length) {
         messageTemp += (char)message[i];
     }
         
-    if (messageTemp.toInt() != count_total) {
+    if (messageTemp != displayText) {
       Serial.println("Refresh display");
-      count_total = messageTemp.toInt();
-      printStatisticToDisplay(count_total, count_both, count_person1, count_person2);
+      printTextToDisplay(messageTemp);
+      displayText = messageTemp;
     }
   }
-
-  if (String(topic) == "iot/coffee/count/today") {
-    for (int i = 0; i < length; i++) {
-        messageTemp += (char)message[i];
-    }
-        
-    if (messageTemp.toInt() != count_both) {
-      Serial.println("Refresh display");
-      count_both = messageTemp.toInt();
-      printStatisticToDisplay(count_total, count_both, count_person1, count_person2);
-    }
-  }
-
-  if (String(topic) == "iot/coffee/count/today/" + person1) {
-    for (int i = 0; i < length; i++) {
-        messageTemp += (char)message[i];
-    }
-        
-    if (messageTemp.toInt() != count_person1) {
-      Serial.println("Refresh display");
-      count_person1 = messageTemp.toInt();
-      printStatisticToDisplay(count_total, count_both, count_person1, count_person2);
-    }
-  }
-
-  if (String(topic) == "iot/coffee/count/today/" + person2) {
-    for (int i = 0; i < length; i++) {
-        messageTemp += (char)message[i];
-    }
-        
-    if (messageTemp.toInt() != count_person2) {
-      Serial.println("Refresh display");
-      count_person2 = messageTemp.toInt();
-      printStatisticToDisplay(count_total, count_both, count_person1, count_person2);
-    }
-  }
-
   Serial.println();
 }
 
@@ -200,8 +145,6 @@ void reconnect() {
       display.println("MQTT connected");
       display.display();
       client.subscribe("iot/coffee/count");
-      client.subscribe("iot/coffee/count/today/" + person1);
-      client.subscribe("iot/coffee/count/today/" + person2);
     } else {
       Serial.print("failed rc=");
       Serial.print(client.state());
@@ -237,11 +180,13 @@ void handleButton1() {
       buttonState1 = reading;
       if (reading == LOW) {
           client.publish("iot/coffee/drink", person1);
+          int tmp = displayText.toInt() + 1;
+          displayText = String(tmp);
 
           printFeedbackToDisplay(person1);
           delay(2000);
 
-          printStatisticToDisplay(count_total, count_both, count_person1, count_person2);
+          printTextToDisplay(displayText);
         }
       }
     }
@@ -261,11 +206,13 @@ void handleButton2() {
       buttonState2 = reading;
       if (reading == LOW) {
           client.publish("iot/coffee/drink", person2);
+          int tmp = displayText.toInt() + 1;
+          displayText = String(tmp);
           
           printFeedbackToDisplay(person2);
           delay(2000);
 
-          printStatisticToDisplay(count_total, count_both, count_person1, count_person2);
+          printTextToDisplay(displayText);
         }
       }
     }
